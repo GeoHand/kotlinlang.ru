@@ -16,7 +16,7 @@ Functions that overload operators need to be marked with the `operator` modifier
 
 Further we describe the conventions that regulate operator overloading for different operators. -->
 
-Язык Kotlin позволяет нам реализовывать предопределённый набор операторов для наших типов. Эти операторы имеют фиксированное символическое представление (вроде `+` или `*`) и фиксированные [приоритеты](grammar.html#precedence). Для реализации оператора, мы предоставляем [функцию-член](functions.html#member-functions) или [функцию-расширение](extensions.html) с фиксированным именем и с соответствующим типом, т. е. левосторонним типом для бинарных операций или типом аргумента для унарных оперций. Функции, которые перегружают операторы должны быть отмечены модификатором `operator`.
+Язык Kotlin позволяет нам реализовывать предопределённый набор операторов для наших типов. Эти операторы имеют фиксированное символическое представление (такое как `+` или `*`) и фиксированные [приоритеты](grammar.html#precedence). Для реализации оператора, мы предоставляем [функцию-член](functions.html#member-functions) или [функцию-расширение](extensions.html) с фиксированным именем и с соответствующим типом, т. е. левосторонним типом для бинарных операций или типом аргумента для унарных оперций. Функции, которые перегружают операторы должны быть отмечены модификатором `operator`.
 
 Далее мы опишем соглашения, которые регламентируют перегрузку операторов для разных типов операторов.
 
@@ -26,11 +26,11 @@ Further we describe the conventions that regulate operator overloading for diffe
 
 <!-- ### Unary prefix operators -->
 
-| Expression | Translated to |
-|------------|---------------|
-| `+a` | `a.unaryPlus()` |
-| `-a` | `a.unaryMinus()` |
-| `!a` | `a.not()` |
+| Выражение | Переводится в   |
+|-----------|---------------  |
+| `+a`      | `a.unaryPlus()` |
+| `-a`      | `a.unaryMinus()`|
+| `!a`      | `a.not()`       |
 
 <!--This table says that when the compiler processes, for example, an expression `+a`, it performs the following steps:-->
 
@@ -42,26 +42,34 @@ Further we describe the conventions that regulate operator overloading for diffe
  If the function is present and its return type is `R`, the expression `+a` has type `R`. 
  -->
  
-* Определяется тип выражения `a`, пусть это будет `T`
-* Смотрится функция `unaryPlus()` с модификатором `operator` без параметров для приемника типа `Т`, т. е. функция-член или функция расширения.
-* Если функция отсутствует или неоднозная, то это ошибка компиляции.
+* Определяет тип выражения `a`, пусть это будет `T`
+* Ищет функцию `unaryPlus()` с модификатором `operator` без параметров для приемника типа `Т`, т. е. функцию-член или функцию-расширение.
+* Если функция отсутствует или неоднозначна, то это ошибка компиляции.
 * Если функция присутствует и её возвращаемый тип есть `R`, выражение `+a` имеет Тип `R`.
 
 <!--*Note* that these operations, as well as all the others, are optimized for [Basic types](basic-types.html) and do not introduce overhead of function calls for them. -->
 *Примечание*, эти операции, как и все остальные, оптимизированы для [основных типов](basic-types.html) и не вносят накладных расходов на вызовы этих функций для них.
+Пример перегрузки оператора унарный минус:
+
+data class Point(val x: Int, val y: Int)
+
+operator fun Point.unaryMinus() = Point(-x, -y)
+
+val point = Point(10, 20)
+println(-point)  // prints "(-10, -20)"
 
 <!--### Increments and decrements -->
 ### Инкремент и декремент
 
-| Expression | Translated to |
-|------------|---------------|
-| `a++` | `a.inc()` + see below |
-| `a--` | `a.dec()` + see below |
+| Выражение | Переводится в         |
+|-----------|-----------------------|
+| `a++`     | `a.inc()` + see below |
+| `a--`     | `a.dec()` + see below |
 
 <!-- The `inc()` and `dec()` functions must return a value, which will be assigned to the variable on which the
 `++` or `--` operation was used. They shouldn't mutate the object on which the `inc` or `dec` was invoked. -->
-Функции `inc()` и `dec()` должны возвращать значение, которое будет присвоено переменной, к которой была применёна
-операция `++` или `--` . Они не должны пытаться изменять сам объект, для которого `inc` или `dec` были вызваны.
+Функции `inc()` и `dec()` должны возвращать значение, которое будет присвоено переменной, к которой была применена
+операция `++` или `--` . Они не должны изменять сам объект, для которого `inc` или `dec` были вызваны.
 
 <!--The compiler performs the following steps for resolution of an operator in the *postfix* form, e.g. `a++`:
 
@@ -70,9 +78,9 @@ Further we describe the conventions that regulate operator overloading for diffe
 * Checks that the return type of the function is a subtype of `T`. -->
 Компилятор осуществляет следующие шаги для разрешения операторов в *постфиксной* форме, например для `a++`:
 
-* Определяется тип переменной `a`, пусть это будет `T`
-* Смотрится функция `inc()` с модификатором `operator` без параметров, применимая для приемника типа `Т`.
-* Проверяется, что возвращаемый тип такой функции является подтипом `T`. 
+* Определяет тип переменной `a`, пусть это будет `T`
+* Ищет функцию `inc()` с модификатором `operator` без параметров, применимую к приемнику типа `Т`.
+* Проверяет, что возвращаемый тип функции является подтипом `T`. 
 
 <!--The effect of computing the expression is:
 
@@ -82,7 +90,7 @@ Further we describe the conventions that regulate operator overloading for diffe
 Эффектом вычисления будет:
 
 * Загружается инициализирующее значение `a` во временную переменную `a0`,
-* Результат выполнения `a.inc()` to `a`,
+* Результат выполнения `a.inc()` присваивается `a`,
 * Возвращается `a0` как результат вычисления выражения (т.е. значение до инкремента).
 
 <!-- For `a--` the steps are completely analogous. -->
@@ -94,7 +102,7 @@ Further we describe the conventions that regulate operator overloading for diffe
 * Return the new value of `a` as a result of the expression. -->
 Для *префиксной* формы `++a` или `--a` разрешение работает подобно, но результатом будет:
 
-* Присвоение результата вычисления `a.inc()` непосредственно `a`,
+* Результат выполнения `a.inc()` присваивается `a`,
 * Возвращается новое значение `a` как общий результат вычисления выражения.
 
 <!-- ## Binary operations -->
@@ -104,32 +112,40 @@ Further we describe the conventions that regulate operator overloading for diffe
 <!--### Arithmetic operators  -->
 ### Арифметические операции
 
-| Expression | Translated to |
-| -----------|-------------- |
-| `a + b` | `a.plus(b)` |
-| `a - b` | `a.minus(b)` |
-| `a * b` | `a.times(b)` |
-| `a / b` | `a.div(b)` |
-| `a % b` | `a.rem(b)`, `a.mod(b)` (устаревшее) |
-| `a..b ` | `a.rangeTo(b)` |
+| Выражение | Переводится в |
+| ----------|-------------- |
+| `a + b`   | `a.plus(b)`   |
+| `a - b`   | `a.minus(b)`  |
+| `a * b`   | `a.times(b)`  |
+| `a / b`   | `a.div(b)`    |
+| `a % b`   | `a.rem(b)`, `a.mod(b)` (устаревшее) |
+| `a..b `   | `a.rangeTo(b)`|
 
 
 <!--For the operations in this table, the compiler just resolves the expression in the *Translated to* column.-->
-Для перечисленных в таблице операций компилятор всего лишь разрешает выражение в вызов функции из колонки *Translated to*.
+Для перечисленных в таблице операций компилятор всего лишь вычисляет выражение из колонки "Переводится в".
 
 <!--Note that the `rem` operator is supported since Kotlin 1.1. Kotlin 1.0 uses the `mod` operator, which is deprecated
 in Kotlin 1.1.-->
-Отметим, что операция `rem` поддерживается только начиная с Kotlin 1.1. Kotlin 1.0 использует только операцию `mod`, которая отмечена как устаревшая в in Kotlin 1.1.
+Отметим, что операция `rem` поддерживается только начиная с Kotlin 1.1. Kotlin 1.0 использует операцию `mod`, которая отмечена как устаревшая в Kotlin 1.1.
+Пример
+Ниже приводится пример класса Counter который с перегруженным + оператором
+
+data class Counter(val dayIndex: Int) {
+    operator fun plus(increment: Int): Counter {
+        return Counter(dayIndex + increment)
+    }
+}
 
 <a name="in"></a>
 
 <!--### 'In' operator -->
 ### Оператор in
 
-| Expression | Translated to |
-| -----------|-------------- |
-| `a in b` | `b.contains(a)` |
-| `a !in b` | `!b.contains(a)` |
+| Выражение  | Переводится в   |
+| -----------|---------------- |
+| `a in b`   | `b.contains(a)` |
+| `a !in b`  | `!b.contains(a)`|
 
 <!--For `in` and `!in` the procedure is the same, but the order of arguments is reversed.-->
 Для операций `in` и `!in` используется одна и та же процедура, только возвращаемый результат инвертируется.
@@ -139,13 +155,13 @@ in Kotlin 1.1.-->
 <!--### Indexed access operator-->
 ### Оператор доступа по индексу
 
-| Expression | Translated to |
-| -------|-------------- |
-| `a[i]`  | `a.get(i)` |
-| `a[i, j]`  | `a.get(i, j)` |
-| `a[i_1, ...,  i_n]`  | `a.get(i_1, ...,  i_n)` |
-| `a[i] = b` | `a.set(i, b)` |
-| `a[i, j] = b` | `a.set(i, j, b)` |
+| Выражение               | Переводится в |
+| ------------------------|-------------- |
+| `a[i]`                  | `a.get(i)` |
+| `a[i, j]`               | `a.get(i, j)` |
+| `a[i_1, ...,  i_n]`     | `a.get(i_1, ...,  i_n)` |
+| `a[i] = b`              | `a.set(i, b)` |
+| `a[i, j] = b`           | `a.set(i, j, b)` |
 | `a[i_1, ...,  i_n] = b` | `a.set(i_1, ..., i_n, b)` |
 
 <!--Square brackets are translated to calls to `get` and `set` with appropriate numbers of arguments.-->
@@ -156,31 +172,31 @@ in Kotlin 1.1.-->
 <!--### Invoke operator-->
 ### Оператор вызова
 
-| Expression | Translated to |
-|--------|---------------|
-| `a()`  | `a.invoke()` |
-| `a(i)`  | `a.invoke(i)` |
-| `a(i, j)`  | `a.invoke(i, j)` |
+| Выражение            | Переводится в   |
+|----------------------|-----------------|
+| `a()`                | `a.invoke()`    |
+| `a(i)`               | `a.invoke(i)`   |
+| `a(i, j)`            | `a.invoke(i, j)`|
 | `a(i_1, ...,  i_n)`  | `a.invoke(i_1, ...,  i_n)` |
 
 <!--Parentheses are translated to calls to `invoke` with appropriate number of arguments.-->
-Оператора вызова (функции, метода) в круглых скобках транслируется в `invoke` с соответствующим числом аргументов. 
+Круглые скобки переводятся в вызов `invoke` с соответствующим числом аргументов. 
 
 <a name="assignments"></a>
 
 <!--### Augmented assignments-->
 ### Присвоения с накоплением
 
-| Expression | Translated to |
-|------------|---------------|
-| `a += b` | `a.plusAssign(b)` |
+|Выражение | Переводится в      |
+|----------|--------------------|
+| `a += b` | `a.plusAssign(b)`  |
 | `a -= b` | `a.minusAssign(b)` |
 | `a *= b` | `a.timesAssign(b)` |
-| `a /= b` | `a.divAssign(b)` |
-| `a %= b` | `a.modAssign(b)` |
+| `a /= b` | `a.divAssign(b)`   |
+| `a %= b` | `a.modAssign(b)`   |
 
 <!--For the assignment operations, e.g. `a += b`, the compiler performs the following steps:-->
-Для присваивающих операций, таких как `a += b`, компилятор осуществляет следующие шаги:
+Для операций присвоения, таких как `a += b`, компилятор осуществляет следующие шаги:
 
 <!--
  If the function from the right column is available
@@ -191,9 +207,9 @@ in Kotlin 1.1.-->
 -->
 
 * Если функция из правой колонки таблицы доступна
-* Если соответствующая бинарная функция (т.е. `plus()` для `plusAssign()`) также доступна, то фиксируется ошибка  (неоднозначность).
-* Проверяется, что возвращаемое значение функции `Unit`, в противном случае фиксируется ошибка.
-* Генерируется код для `a.plusAssign(b)`
+  * Если соответствующая бинарная функция (т.е. `plus()` для `plusAssign()`) также доступна, то фиксируется ошибка  (неоднозначность).
+  * Проверяется, что возвращаемый тип функции `Unit`, в противном случае фиксируется ошибка.
+  * Генерируется код для `a.plusAssign(b)`
 * В противном случае, делается попытка сгенерировать код для `a = a + b` (при этом включается проверка типов: тип выражения `a + b` должен быть подтипом `a`).
 
 <!--*Note*: assignments are *NOT* expressions in Kotlin.-->
@@ -204,10 +220,10 @@ in Kotlin 1.1.-->
 <!--### Equality and inequality operators-->
 ### Операторы равенства и неравенства
 
-| Expression | Translated to |
-|------------|---------------|
-| `a == b` | `a?.equals(b) ?: (b === null)` |
-| `a != b` | `!(a?.equals(b) ?: (b === null))` |
+|Выражение   | Переводится в                     |
+|------------|-----------------------------------|
+| `a == b`   | `a?.equals(b) ?: (b === null)`    |
+| `a != b`   | `!(a?.equals(b) ?: (b === null))` |
 
 <!--*Note*: `===` and `!==` (identity checks) are not overloadable, so no conventions exist for them-->
 *Отметим*: операции `===` и `!==` (проверка идентичности) являются неперегружаемыми, поэтому не приводятся никакие соглашения для них.
@@ -230,7 +246,7 @@ in Kotlin 1.1.-->
 | `a <= b` | `a.compareTo(b) <= 0` |
 
 <!--All comparisons are translated into calls to `compareTo`, that is required to return `Int`.-->
-Все сравения транслируются в вызовы `compareTo`, от которых требуется, чтобы они возвращали значение `Int`.
+Все сравения транслируются в вызовы `compareTo`, от которых требуется, чтобы они возвращали  `Int`.
 
 <!--## Infix calls for named functions-->
 ## Инфиксные вызовы именованных функций
